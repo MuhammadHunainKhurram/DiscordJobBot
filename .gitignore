@@ -1,7 +1,4 @@
-# Python
 __pycache__/
 venv/
-
-# Secrets
 .env
 *.db
