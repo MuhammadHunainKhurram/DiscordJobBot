@@ -187,10 +187,10 @@ class DiscordBot(commands.Bot):
                 continue
 
             msg = (
-                f"# **{row['company']}**\n"
-                f"**🎯 Role:** {row['title']}\n"
-                f"**📍 Location:** {row['location']}\n"
-                f"**🔗 Apply:** [Click here to apply]({row['job_url']})\n"
+                f"## **{row['company']}**\n"
+                f"**Role:** {row['title']}\n"
+                f"**Location:** {row['location']}\n"
+                f"**Apply:** [Click here to apply]({row['job_url']})\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             )
 
