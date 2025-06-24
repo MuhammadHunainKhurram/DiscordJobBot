@@ -1,7 +1,7 @@
 discord.py
 python-dotenv
 requests
-jobspy==0.29.0
+jobspy
 pandas
 psycopg2-binary
 sqlalchemy
