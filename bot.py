@@ -6,7 +6,8 @@ import pandas as pd
 from discord.ext import tasks, commands
 from dotenv import load_dotenv
 from jobspy import scrape_jobs
-import sqlalchemy as sa
+from sqlalchemy import create_engine, text
+import os, sqlalchemy as sa
 
 
 
@@ -101,29 +102,37 @@ INTN_WORDS = re.compile(r"\b(intern|internship|apprentice|co[- ]?op|coop|student
 # ─────────────────────────────── DATABASE ──────────────────────────────
 # One PostGreSQL table to store every job we've already posted (for deduping)
 DB_URL = os.getenv("DATABASE_URL")
+if not DB_URL:
+    raise SystemExit("DATABASE_URL missing in .env")
+
 engine = sa.create_engine(DB_URL, pool_pre_ping=True)
-conn   = engine.raw_connection()
 
-
-
-conn.execute(
-    """CREATE TABLE IF NOT EXISTS jobs (
-           triple   TEXT PRIMARY KEY,           -- company|title|location (lower)
-           url      TEXT,
-           source   TEXT,
-           posted   DATETIME DEFAULT CURRENT_TIMESTAMP
-       );"""
-)
+with engine.begin() as conn:
+    conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS jobs (
+            triple  TEXT PRIMARY KEY,                  -- company|title|location
+            url     TEXT,
+            source  TEXT,
+            posted  TIMESTAMPTZ DEFAULT NOW()
+        );
+    """))
 
 def triple(company: str, title: str, loc: str) -> str:
     return f"{company.lower()}|{title.lower()}|{loc.lower()}"
 
 def has_been_posted(tp: str) -> bool:
-    return conn.execute("SELECT 1 FROM jobs WHERE triple=?;", (tp,)).fetchone() is not None
+    stmt = text("SELECT 1 FROM jobs WHERE triple = :tp;")
+    with engine.connect() as conn:
+        return conn.execute(stmt, {"tp": tp}).scalar() is not None
 
 def remember(tp: str, url: str, src: str) -> None:
-    conn.execute("INSERT OR IGNORE INTO jobs (triple,url,source) VALUES (?,?,?);", (tp, url, src))
-    conn.commit()
+    stmt = text("""
+        INSERT INTO jobs (triple, url, source)
+        VALUES (:tp, :url, :src)
+        ON CONFLICT (triple) DO NOTHING;
+    """)
+    with engine.begin() as conn:
+        conn.execute(stmt, {"tp": tp, "url": url, "src": src})
 
 
 # ─────────────────────────────── HELPERS ───────────────────────────────
