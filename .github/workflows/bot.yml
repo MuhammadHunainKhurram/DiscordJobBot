@@ -1,13 +1,12 @@
-name: Run Discord Job Bot every 30 min
+name: Discord Job Bot · every 30 min
 
 on:
   schedule:
-    # */30 = once every 30 minutes, UTC
     - cron: "*/30 * * * *"
-  workflow_dispatch:               # manual run button
+  workflow_dispatch:
 
 jobs:
-  scrape:
+  run-bot:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,15 +16,14 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install requirements
+    - name: Set up venv & install requirements
       run: |
+        python -m venv .venv
+        . .venv/bin/activate
         python -m pip install --upgrade pip
-        # pip installs into ~/.local/lib/...  (implicit --user)
-        python -m pip install --user -r requirements.txt
-
-    - name: Add user-site dir to PYTHONPATH
-      run: |
-        echo "PYTHONPATH=$(python -m site --user-site):$PYTHONPATH" >> "$GITHUB_ENV"
+        python -m pip install -r requirements.txt
+        python -m pip show jobspy            # proves JobSpy is there
+        echo "VENV_PY=$GITHUB_WORKSPACE/.venv/bin/python" >> "$GITHUB_ENV"
 
     - name: Run Discord Job Bot
       env:
@@ -46,4 +44,4 @@ jobs:
         DATABASE_URL:        ${{ secrets.DATABASE_URL }}
       run: |
         echo "Starting Discord Job Bot at $(date -u)"
-        python bot.py
+        $VENV_PY bot.py
