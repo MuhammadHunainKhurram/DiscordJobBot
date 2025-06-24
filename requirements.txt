@@ -2,5 +2,7 @@ discord.py
 python-dotenv
 requests
 jobspy
-sqlalchemy
 pandas
+psycopg2-binary
+sqlalchemy
+gunicorn

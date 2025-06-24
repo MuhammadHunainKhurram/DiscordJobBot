@@ -6,6 +6,8 @@ import pandas as pd
 from discord.ext import tasks, commands
 from dotenv import load_dotenv
 from jobspy import scrape_jobs
+import sqlalchemy as sa
+
 
 
 # ────────────────────────────── ENV & LOGGING ──────────────────────────
@@ -97,9 +99,13 @@ INTN_WORDS = re.compile(r"\b(intern|internship|apprentice|co[- ]?op|coop|student
 
 
 # ─────────────────────────────── DATABASE ──────────────────────────────
-# One SQLite table to store every job we've already posted (for deduping)
-DB = "jobs.db"
-conn = sqlite3.connect(DB)
+# One PostGreSQL table to store every job we've already posted (for deduping)
+DB_URL = os.getenv("DATABASE_URL")
+engine = sa.create_engine(DB_URL, pool_pre_ping=True)
+conn   = engine.raw_connection()
+
+
+
 conn.execute(
     """CREATE TABLE IF NOT EXISTS jobs (
            triple   TEXT PRIMARY KEY,           -- company|title|location (lower)
