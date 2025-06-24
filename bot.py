@@ -29,6 +29,7 @@ TOKEN               = os.getenv("TOKEN")
 SCRAPE_GITHUB   = os.getenv("SCRAPE_GITHUB", "true").lower() == "true"
 SCRAPE_JOBSPY   = os.getenv("SCRAPE_JOBSPY", "true").lower() == "true"
 INTERVAL_MIN    = int(os.getenv("SCRAPE_MIN", 15)) 
+RUN_ONCE = os.getenv("RUN_ONCE", "false").lower() == "true"
 
 
 
@@ -243,13 +244,19 @@ bot = commands.Bot(command_prefix=None, intents=intents, help_command=None)
 async def status():
     await bot.change_presence(activity=discord.Game("hunting jobs 🔍"))
 
-@tasks.loop(minutes=INTERVAL_MIN)
+@tasks.loop(minutes=INTERVAL_MIN, count=1 if RUN_ONCE else None)
 async def scrape():
     if SCRAPE_JOBSPY:
         await scrape_jobspy()
     if SCRAPE_GITHUB:
         await scrape_github()
+
     logging.info("Cycle complete.")
+
+    if RUN_ONCE:  
+        logging.info("RUN_ONCE complete – shutting down.")
+        await bot.close()
+
 
 
 # ───────── SCRAPE LINKEDIN / INDEED (JobSpy) ─────────
@@ -346,8 +353,8 @@ async def scrape_github():
 @bot.event
 async def on_ready():
     logging.info(
-        f"Logged in as {bot.user} • discord.py {discord.__version__} "
-        f"• Python {platform.python_version()}"
+        f"Logged in as {bot.user} • discord.py {discord.__version__}"
+        f" • Python {platform.python_version()}"
     )
     status.start()
     scrape.start()
