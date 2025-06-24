@@ -1,0 +1,50 @@
+name: Run Discord Job Bot every 30 min
+
+on:
+  schedule:
+    - cron: "0,30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+    - name: Install requirements
+      run: pip install -r requirements.txt
+
+    - name: Run Discord Job Bot
+      env:
+        TOKEN:               ${{ secrets.TOKEN }}
+        FT_CHANNEL_ID:       ${{ secrets.FT_CHANNEL_ID }}
+        INTERN_CHANNEL_ID:   ${{ secrets.INTERN_CHANNEL_ID }}
+
+        SWE:   ${{ secrets.SWE }}
+        ENG:   ${{ secrets.ENG }}
+        DATA:  ${{ secrets.DATA }}
+        PM:    ${{ secrets.PM }}
+        SUM26: ${{ secrets.SUM26 }}
+        SUM25: ${{ secrets.SUM25 }}
+        OS26:  ${{ secrets.OS26 }}
+        OS25:  ${{ secrets.OS25 }}
+
+        SCRAPE_GITHUB: ${{ secrets.SCRAPE_GITHUB }}
+        SCRAPE_JOBSPY: ${{ secrets.SCRAPE_JOBSPY }}
+        SCRAPE_MIN:    ${{ secrets.SCRAPE_MIN }}
+
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        echo "Starting Discord Job Bot at $(date -u)"
+        python bot.py
