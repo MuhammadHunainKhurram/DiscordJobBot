@@ -2,7 +2,7 @@ discord.py
 python-dotenv
 requests
 jobspy
-pandas
+pandas==0.29.0
 psycopg2-binary
 sqlalchemy
 gunicorn

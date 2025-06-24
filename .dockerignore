@@ -1,0 +1,10 @@
+# flyctl launch added from .gitignore
+**\github_scrapers\.env
+**\github_scrapers\gh_seen.db
+
+**\.env
+**\venv
+**\discord.log
+**\jobs.db
+**\jobs.db-journal
+fly.toml
