@@ -1,6 +1,8 @@
 github_scrapers/.env
 github_scrapers/gh_seen.db
 
+.github
+
 .env
 venv
 discord.log

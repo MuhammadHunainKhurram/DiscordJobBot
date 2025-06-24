@@ -67,7 +67,7 @@ BLACKLIST_COMPANIES = {
 }
 
 BAD_ROLES = {
-    "unpaid","senior","lead","manager","director","principal","vp",
+    "unpaid","senior","lead","manager","director","principal","vp", "staff",
     "sr.","sr","snr","ii","iii",
 }
 
@@ -224,12 +224,12 @@ def discord_message(r: dict) -> str:
     return textwrap.dedent(
         f"""\
         ## {r['company']}
-        --------------------------------------------------
+        -----------------------------------------------
         **Role:** {r['title']}
         **Location:** {r['location']}
         **Link:** **[Apply Here]({r['link']})**
         **Source:** {r['source']}
-        --------------------------------------------------
+        -----------------------------------------------
         """
     )
 
