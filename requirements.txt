@@ -1,7 +1,7 @@
 discord.py==2.5.2
 python-dotenv>=1.1
 requests>=2.32
-jobspy>=0.6.0
+python-jobspy>=1.1.80
 pandas>=2.2,<3
 psycopg2-binary>=2.9
 sqlalchemy>=2.0
