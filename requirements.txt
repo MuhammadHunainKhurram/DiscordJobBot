@@ -1,8 +1,8 @@
-discord.py
-python-dotenv
-requests
-jobspy
-pandas
-psycopg2-binary
-sqlalchemy
+discord.py==2.5.2
+python-dotenv>=1.1
+requests>=2.32
+jobspy==0.29.0           # ✱ jobspy brings in pandas ≥2.2
+pandas>=2.2,<3           # ✱ never “0.29.0”
+psycopg2-binary>=2.9
+sqlalchemy>=2.0
 gunicorn
