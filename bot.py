@@ -51,10 +51,14 @@ REPOS = {k: v for k, v in REPOS.items() if v}
 
 OFFSEASON_REPOS = {"os26", "os25"} 
 SOURCE_LABEL = {
-    "swe":"Jobright SWE", "eng":"Jobright ENG",
-    "data":"Jobright Data", "pm":"Jobright PM",
-    "sum26":"Ouckah", "sum25":"Simplify",
-    "os26":"Ouckah Off-Season", "os25":"Simplify Off-Season",
+    "swe"   :   "J-SWE", 
+    "eng"   :   "J-ENG",
+    "data"  :   "J-DATA", 
+    "pm"    :   "J-PM",
+    "sum26" :   "OH", 
+    "sum25" :   "SY",
+    "os26"  :   "OH-Off-Season", 
+    "os25"  :   "SY-Off-Season",
 }
 
 
@@ -82,21 +86,28 @@ TECH_TERMS = re.compile(
 
 # JobSpy search terms (intern & full-time)
 SEARCH_TERMS_INTERN = [
-    "software engineer intern","software engineering intern","software developer intern",
-    "software development intern","ai intern","machine learning intern",
-    "machine learning engineering intern","product management intern",
-    "product manager intern","project management intern","data science intern",
-    "data analyst intern","data engineering intern",
+    "software engineer intern",
+    "software engineering intern",
+    "software developer intern",
+    "ai intern",
+    "machine learning intern",
+    "product management intern",
+    "product manager intern",
+    "project management intern",
+    "data science intern",
 ]
 
 
 SEARCH_TERMS_FT = [
-    "software engineer","software engineering","software developer",
-    "ai engineer","data scientist","product manager","project manager",
+    "software engineer",
+    "software developer",
+    "ai engineer",
+    "data scientist",
+    "product manager",
+    "project manager",
 ]
 
 
-# Regex to classify internship titles
 INTN_WORDS = re.compile(r"\b(intern|internship|apprentice|co[- ]?op|coop|student|trainee)\b", re.I)
 
 
@@ -111,7 +122,7 @@ engine = sa.create_engine(DB_URL, pool_pre_ping=True)
 with engine.begin() as conn:
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS jobs (
-            triple  TEXT PRIMARY KEY,                  -- company|title|location
+            triple  TEXT PRIMARY KEY,               
             url     TEXT,
             source  TEXT,
             posted  TIMESTAMPTZ DEFAULT NOW()
@@ -273,7 +284,7 @@ async def scrape_jobspy() -> None:
             site_name=      ["linkedin", "indeed"],
             search_term=    term,
             location=       "United States",
-            results_wanted= 30,
+            results_wanted= 10,
             hours_old=      12,
         )
         total_int += await post_dataframe(df, "JobSpy", chan_intern, term, expect_intern=True)
@@ -284,7 +295,7 @@ async def scrape_jobspy() -> None:
             site_name=      ["linkedin", "indeed"],
             search_term=    term,
             location=       "United States",
-            results_wanted= 30,
+            results_wanted= 10,
             hours_old=      12,
         )
         total_ft  += await post_dataframe(df, "JobSpy", chan_ft,    term, expect_intern=False)
@@ -305,7 +316,6 @@ async def post_dataframe(df, source: str, channel: discord.TextChannel, term: st
         if expect_intern and not is_intern_title(row["title"]):
             continue
         if not expect_intern and is_intern_title(row["title"]):
-            # safety: keep stray interns out of the FT channel
             continue
 
         row_dict = {

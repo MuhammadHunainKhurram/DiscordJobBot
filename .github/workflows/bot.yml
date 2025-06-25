@@ -8,20 +8,20 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15    
+    timeout-minutes: 2    
     env:       
-      TOKEN:           ${{ secrets.TOKEN }}
-      FT_CHANNEL_ID:   ${{ secrets.FT_CHANNEL_ID }}
-      INTERN_CHANNEL_ID: ${{ secrets.INTERN_CHANNEL_ID }}
+      TOKEN:                ${{ secrets.TOKEN }}
+      FT_CHANNEL_ID:        ${{ secrets.FT_CHANNEL_ID }}
+      INTERN_CHANNEL_ID:    ${{ secrets.INTERN_CHANNEL_ID }}
 
-      SWE:   ${{ secrets.SWE }}
-      ENG:   ${{ secrets.ENG }}
-      DATA:  ${{ secrets.DATA }}
-      PM:    ${{ secrets.PM }}
-      SUM26: ${{ secrets.SUM26 }}
-      SUM25: ${{ secrets.SUM25 }}
-      OS26:  ${{ secrets.OS26 }}
-      OS25:  ${{ secrets.OS25 }}
+      SWE:      ${{ secrets.SWE }}
+      ENG:      ${{ secrets.ENG }}
+      DATA:     ${{ secrets.DATA }}
+      PM:       ${{ secrets.PM }}
+      SUM26:    ${{ secrets.SUM26 }}
+      SUM25:    ${{ secrets.SUM25 }}
+      OS26:     ${{ secrets.OS26 }}
+      OS25:     ${{ secrets.OS25 }}
 
       SCRAPE_GITHUB:  ${{ secrets.SCRAPE_GITHUB }}
       SCRAPE_JOBSPY:  ${{ secrets.SCRAPE_JOBSPY }}
@@ -48,3 +48,7 @@ jobs:
         run: |
           echo "Starting Discord Job Bot at $(date -u)"
           python bot.py
+
+      - name: ✨ Ping schedule
+        run: echo "Cron run at $(date -u)"
+
