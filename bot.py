@@ -30,6 +30,11 @@ SCRAPE_JOBSPY   = os.getenv("SCRAPE_JOBSPY", "true").lower() == "true"
 INTERVAL_MIN    = int(os.getenv("SCRAPE_MIN", 15)) 
 RUN_ONCE = os.getenv("RUN_ONCE", "false").lower() == "true"
 
+# ─── IMAGE PATHS ──────────────────────────────────────────────────
+IMG_DIR          = "images"
+INTERN_IMG_NAME  = "internship.png"
+NEWGRAD_IMG_NAME = "new-grad.png"
+
 
 
 # ─────────────────────────────── REPO LIST ─────────────────────────────
@@ -47,6 +52,7 @@ REPOS = {
 
 # Remove any None entries so you can comment a repo out by deleting its env var
 REPOS = {k: v for k, v in REPOS.items() if v}
+
 
 OFFSEASON_REPOS = {"os26", "os25"} 
 SOURCE_LABEL = {
@@ -69,6 +75,7 @@ BLACKLIST_COMPANIES = {
     "Phoenix Recruitment","Patterned Learning Career","SysMind","SysMind LLC",
     "Motion Recruitment","Lensa",
 }
+
 
 BAD_ROLES = {
     "unpaid","senior","lead","manager","director","principal","vp", "staff",
@@ -110,13 +117,16 @@ SEARCH_TERMS_FT = [
 INTN_WORDS = re.compile(r"\b(intern|internship|apprentice|co[- ]?op|coop|student|trainee)\b", re.I)
 
 
+
 # ─────────────────────────────── DATABASE ──────────────────────────────
 # One PostGreSQL table to store every job we've already posted (for deduping)
 DB_URL = os.getenv("DATABASE_URL")
 if not DB_URL:
     raise SystemExit("DATABASE_URL missing in .env")
 
+
 engine = sa.create_engine(DB_URL, pool_pre_ping=True)
+
 
 with engine.begin() as conn:
     conn.execute(text("""
@@ -128,13 +138,16 @@ with engine.begin() as conn:
         );
     """))
 
+
 def triple(company: str, title: str, loc: str) -> str:
     return f"{company.lower()}|{title.lower()}|{loc.lower()}"
+
 
 def has_been_posted(tp: str) -> bool:
     stmt = text("SELECT 1 FROM jobs WHERE triple = :tp;")
     with engine.connect() as conn:
         return conn.execute(stmt, {"tp": tp}).scalar() is not None
+
 
 def remember(tp: str, url: str, src: str) -> None:
     stmt = text("""
@@ -144,6 +157,7 @@ def remember(tp: str, url: str, src: str) -> None:
     """)
     with engine.begin() as conn:
         conn.execute(stmt, {"tp": tp, "url": url, "src": src})
+
 
 
 # ─────────────────────────────── HELPERS ───────────────────────────────
@@ -212,6 +226,7 @@ def classification(title: str) -> str:
     """Return 'intern' or 'ft' based on title keywords."""
     return "intern" if INTN_WORDS.search(title) else "ft"
 
+
 def is_intern_title(title: str) -> bool:
     INTN_WORDS = re.compile(
         r"\b(intern|internship|apprentice|co[- ]?op|coop|student|trainee)\b",
@@ -244,6 +259,31 @@ def discord_message(r: dict) -> str:
         """
     )
 
+
+
+# ─── EMBEDDED MESSAGES ────────────────────────────────────────
+def build_embed(row: dict, is_intern: bool) -> tuple[discord.Embed, discord.File]:
+    embed = discord.Embed(
+        title=row["company"],
+        colour=0x5865F2,
+        timestamp=datetime.utcnow(),
+    )
+    embed.add_field(name="Role",     value=row["title"],               inline=False)
+    embed.add_field(name="Location", value=row["location"] or "—",     inline=False)
+    embed.add_field(
+        name="Link",
+        value=f"[Apply Here]({row['link']})",
+        inline=False,
+    )
+    embed.set_footer(text=f"Source: {row['source']}")
+
+    img_name = INTERN_IMG_NAME if is_intern else NEWGRAD_IMG_NAME
+    img_path = os.path.join(IMG_DIR, img_name)
+    file     = discord.File(img_path, filename=img_name)
+
+    embed.set_image(url=f"attachment://{img_name}")
+
+    return embed, file
 
 
 # ─────────────────────────────── DISCORD BOT ───────────────────────────
@@ -297,13 +337,12 @@ async def scrape_jobspy() -> None:
             results_wanted= 10,
             hours_old=      12,
         )
-        total_ft  += await post_dataframe(df, "JobSpy", chan_ft,    term, expect_intern=False)
+        total_ft  += await post_dataframe(df, "JS", chan_ft,    term, expect_intern=False)
 
     logging.info(f"JobSpy cycle → {total_int} intern rows, {total_ft} full-time rows")
 
 
 async def post_dataframe(df, source: str, channel: discord.TextChannel, term: str, expect_intern: bool) -> int:
-    """Send each new, filtered job row to Discord and persist in DB."""
     posted = 0
     for _, row in df.iterrows():
 
@@ -332,7 +371,9 @@ async def post_dataframe(df, source: str, channel: discord.TextChannel, term: st
         if has_been_posted(tp):
             continue
 
-        await channel.send(discord_message(row_dict))
+        is_intern = expect_intern
+        embed, file = build_embed(row_dict, is_intern)
+        await channel.send(file=file, embed=embed)
         remember(tp, row_dict["link"], source)
         posted += 1
 
@@ -342,17 +383,20 @@ async def post_dataframe(df, source: str, channel: discord.TextChannel, term: st
 
 # ───────── SCRAPE GITHUB READMEs ─────────
 async def scrape_github():
-    """Parse every configured repo and post internships (GitHub lists are all internships)."""
     chan = bot.get_channel(INTERN_CHANNEL_ID) or await bot.fetch_channel(INTERN_CHANNEL_ID)
     posted = 0
     for k, path in REPOS.items():
         for r in fetch_repo_rows(k, path):
+
             if not passes_filters(r):
                 continue
+
             tp = triple(r["company"], r["title"], r["location"])
             if has_been_posted(tp):
                 continue
-            await chan.send(discord_message(r))
+
+            embed, file = build_embed(r, is_intern=True)
+            await chan.send(file=file, embed=embed)
             remember(tp, r["link"], r["source"])
             posted += 1
     logging.info(f"GitHub: posted {posted}")
