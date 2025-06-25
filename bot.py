@@ -24,7 +24,6 @@ logging.basicConfig(
 FT_CHANNEL_ID       = int(os.getenv("FT_CHANNEL_ID"))
 INTERN_CHANNEL_ID   = int(os.getenv("INTERN_CHANNEL_ID"))
 TOKEN               = os.getenv("TOKEN")
-
 # Quick feature toggles (optional in .env)
 SCRAPE_GITHUB   = os.getenv("SCRAPE_GITHUB", "true").lower() == "true"
 SCRAPE_JOBSPY   = os.getenv("SCRAPE_JOBSPY", "true").lower() == "true"
