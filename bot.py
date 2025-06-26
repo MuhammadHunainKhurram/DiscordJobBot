@@ -366,37 +366,59 @@ async def post_dataframe(df, source: str, channel: discord.TextChannel, term: st
 
 
 # ───────── SCRAPE GITHUB READMEs ─────────
-async def scrape_github():
-    chan_int = await bot.fetch_channel(INTERN_CHANNEL_ID)
-    chan_ng  = await bot.fetch_channel(NG_CHANNEL_ID)
+async def scrape_github() -> None:
+    chan_int = bot.get_channel(INTERN_CHANNEL_ID) or await bot.fetch_channel(INTERN_CHANNEL_ID)
+    
+    chan_ng  = bot.get_channel(NG_CHANNEL_ID) or await bot.fetch_channel(NG_CHANNEL_ID)
+
+    loop = asyncio.get_running_loop()
+
+    def _load_posted() -> set[str]:
+        with engine.begin() as conn:
+            return {row[0] for row in conn.execute(text("SELECT triple FROM jobs"))}
+
+    posted: set[str] = await loop.run_in_executor(None, _load_posted)
 
     posted_int = posted_ng = 0
-    for k, path in REPOS.items():
-        if k in NEWGRAD_REPOS and not SCRAPE_GH_NG:     
+
+    for key, path in REPOS.items():
+        is_ng_repo   = key in NEWGRAD_REPOS
+        is_int_repo  = not is_ng_repo
+
+        if is_ng_repo and not SCRAPE_GH_NG:
+            continue
+        if is_int_repo and not SCRAPE_GH_INTERN:
             continue
 
-        if k not in NEWGRAD_REPOS and not SCRAPE_GH_INTERN: 
-            continue
+        category = "newgrad" if is_ng_repo else "intern"
+        channel  = chan_ng    if is_ng_repo else chan_int
 
-        category  = "newgrad" if k in NEWGRAD_REPOS else "intern"
-        channel   = chan_ng   if category=="newgrad"   else chan_int
-
-        for r in fetch_repo_rows(k, path):
-            if not passes_filters(r):                  
+        for row in fetch_repo_rows(key, path):
+            if not passes_filters(row):
                 continue
 
-            tp = triple(r["company"], r["title"], r["location"])
-            if has_been_posted(tp):                    
+            tp = triple(row["company"], row["title"], row["location"] or "")
+            if tp in posted:
                 continue
 
-            embed,file = build_embed(r, category)
+            embed, file = build_embed(row, category)
             await channel.send(file=file, embed=embed)
             await asyncio.sleep(RATE_LIMIT)
-            remember(tp, r["link"], r["source"])
-            if category=="newgrad": posted_ng  += 1
-            else:                   posted_int += 1
 
-    logging.info(f"GitHub → {posted_int} intern, {posted_ng} NG posts")
+            remember(tp, row["link"], row["source"])
+            posted.add(tp)
+
+            if is_ng_repo:
+                posted_ng  += 1
+
+            else:
+                posted_int += 1
+
+    logging.info(
+        "GitHub → %d intern, %d NG posts (batch size: %d repos)",
+        posted_int, posted_ng, len(REPOS),
+    )
+
 
 
 # ─────────────────────────────── BOT STARTUP ───────────────────────────
