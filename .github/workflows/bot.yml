@@ -13,6 +13,7 @@ jobs:
       TOKEN:                            ${{ secrets.TOKEN }}
       FT_CHANNEL_ID:                    ${{ secrets.FT_CHANNEL_ID }}
       INTERN_CHANNEL_ID:                ${{ secrets.INTERN_CHANNEL_ID }}
+      NG_CHANNEL_ID:                    ${{ secrets.NG_CHANNEL_ID }}
 
       SWE:                              ${{ secrets.SWE }}
       ENG:                              ${{ secrets.ENG }}
