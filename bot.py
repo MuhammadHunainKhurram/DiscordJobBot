@@ -23,7 +23,7 @@ logging.basicConfig(
 # Discord channel IDs and bot token
 FT_CHANNEL_ID       = int(os.getenv("FT_CHANNEL_ID"))
 INTERN_CHANNEL_ID   = int(os.getenv("INTERN_CHANNEL_ID"))
-NG_CHANNEL_ID       = int(os.getenv("NG_CHANNEL_ID", FT_CHANNEL_ID))
+NG_CHANNEL_ID       = int(os.getenv("NG_CHANNEL_ID"))
 TOKEN               = os.getenv("TOKEN")
 
 # Quick feature toggles (optional in .env)
@@ -310,7 +310,7 @@ async def scrape_jobspy() -> None:
             results_wanted= 10,
             hours_old=      12,
         )
-        total_int += await post_dataframe(df, "JobSpy", chan_intern, term, expect_intern=True)
+        total_int += await post_dataframe(df, "JS", chan_intern, term, expect_intern=True)
 
     for term in SEARCH_TERMS_FT:
         df = scrape_jobs(
@@ -390,8 +390,8 @@ async def scrape_github() -> None:
         if is_int_repo and not SCRAPE_GH_INTERN:
             continue
 
-        category = "newgrad" if is_ng_repo else "intern"
-        channel  = chan_ng    if is_ng_repo else chan_int
+        category = "newgrad"    if is_ng_repo else "intern"
+        channel  = chan_ng      if is_ng_repo else chan_int
 
         for row in fetch_repo_rows(key, path):
             if not passes_filters(row):
